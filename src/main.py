@@ -1,72 +1,75 @@
-from fastapi import FastAPI, Request, BackgroundTasks, Depends
-from sqlalchemy.orm import Session
+"""
+Application factory — creates and configures the FastAPI app.
+
+Single Responsibility: only wires middleware, telemetry, routers, and startup hooks.
+Zero business logic lives here.
+"""
 import logging
+
+from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from src.core.logger import setup_logging
-from src.database.session import engine, Base, get_db
-from src.database import repository
-from src.agent import agent
-from src.reporting import router as reporting_router
+from src.database.session import engine, Base
 from src.scheduler import start_scheduler
 
-# Setup central logging configuration
+# --- Bootstrap logging before anything else ---
 setup_logging()
 logger = logging.getLogger(__name__)
 
-# Create all tables (for fast iteration, no alembic yet)
-Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Price Tracker WhatsApp Agent")
+def create_app() -> FastAPI:
+    """Build and return the fully configured FastAPI application."""
 
-# Setup telemetry
-Instrumentator().instrument(app).expose(app)
+    # Create tables (fast iteration — replace with Alembic for production)
+    Base.metadata.create_all(bind=engine)
 
-app.include_router(reporting_router)
+    app = FastAPI(title="Price Tracker Agent")
 
-@app.on_event("startup")
-def on_startup():
-    start_scheduler()
+    # --- Telemetry ---
+    Instrumentator().instrument(app).expose(app)
 
-async def background_agent_task(user_id: int, message: str, phone_number: str):
-    """
-    Runs the agent in the background to prevent webhook timeout.
-    """
-    response = await agent.process_message(user_id, message, phone_number)
-    logger.info(f"Agent finished. Would send WhatsApp message to {phone_number}: {response}")
-    # Here you would call Twilio/Meta API to send the final response back to WhatsApp.
+    # --- Register channel routers (Open/Closed: add new channels here) ---
+    from src.channels.whatsapp import router as whatsapp_router
+    app.include_router(whatsapp_router, prefix="/webhook")
 
-@app.post("/webhook/whatsapp")
-async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    """
-    Receives incoming WhatsApp messages.
-    """
-    # Parse the incoming form data or JSON (depends on provider, e.g., Twilio sends Form data)
-    try:
-        form_data = await request.form()
-        incoming_msg = form_data.get('Body', '').strip()
-        sender_number = form_data.get('From', '')
-    except Exception:
-        # Fallback for JSON if not using form data
-        json_data = await request.json()
-        incoming_msg = json_data.get('message', '')
-        sender_number = json_data.get('phone_number', '')
+    # --- Register report serving ---
+    from src.reports.server import router as reports_router
+    app.include_router(reports_router)
 
-    if not sender_number:
-        return {"status": "error", "message": "No sender number provided"}
+    # --- Register services with the orchestrator ---
+    _register_services()
 
-    try:
-        user = repository.get_or_create_user(db, sender_number)
-    except Exception as e:
-        logger.exception("Database error while fetching user")
-        return {"status": "error", "message": "Database error"}
+    # --- Startup hooks ---
+    @app.on_event("startup")
+    def on_startup():
+        start_scheduler()
+        logger.info("Application started")
 
-    # Offload to background task
-    background_tasks.add_task(background_agent_task, user.id, incoming_msg, sender_number)
+    # --- Health check ---
+    @app.get("/health")
+    def health_check():
+        return {"status": "healthy"}
 
-    # Return immediately to prevent timeout
-    return {"status": "ok", "message": "Task queued"}
+    return app
 
-@app.get("/health")
-def health_check():
-    return {"status": "healthy"}
+
+def _register_services() -> None:
+    """Wire service implementations to the orchestrator (Dependency Inversion)."""
+    from src.services.orchestrator import orchestrator
+    from src.services.price_check import PriceCheckService
+    from src.services.tracking import TrackingService
+    from src.services.research import ResearchService
+    from src.services.alternatives import AlternativesService
+    from src.services.review import ReviewService
+
+    orchestrator.register("price_check", PriceCheckService())
+    orchestrator.register("track", TrackingService())
+    orchestrator.register("research", ResearchService())
+    orchestrator.register("alternatives", AlternativesService())
+    orchestrator.register("review", ReviewService())
+
+    logger.info("All services registered with orchestrator")
+
+
+app = create_app()
