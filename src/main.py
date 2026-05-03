@@ -1,6 +1,12 @@
 from fastapi import FastAPI, Request, BackgroundTasks, Depends
 from sqlalchemy.orm import Session
 import logging
+from prometheus_fastapi_instrumentator import Instrumentator
+from .logger import setup_logging
+
+# Setup central logging configuration
+setup_logging()
+logger = logging.getLogger(__name__)
 
 from .database import engine, Base, get_db
 from .models import User
@@ -13,10 +19,10 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Price Tracker WhatsApp Agent")
 
-app.include_router(reporting_router)
+# Setup telemetry
+Instrumentator().instrument(app).expose(app)
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+app.include_router(reporting_router)
 
 @app.on_event("startup")
 def on_startup():

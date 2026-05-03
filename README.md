@@ -51,9 +51,26 @@ A Python-based WhatsApp chatbot powered by the **NemoClaw/OpenClaw** autonomous 
 3. In your WhatsApp provider's webhook settings (e.g., Twilio Sandbox), set the webhook URL to:
    `https://...ngrok.app/webhook/whatsapp`
 
+## Monitoring & Telemetry
+
+The project comes with an out-of-the-box monitoring stack configured in `docker-compose.yml`. When you run `docker compose up`, the following services are started alongside the web app and database:
+
+- **Prometheus** (Port `9090`): Automatically scrapes performance metrics (request rates, latency, errors) from the FastAPI app.
+- **Loki** (Port `3100`): A highly efficient log aggregation system. The Python app pushes logs directly to Loki over HTTP.
+- **Grafana** (Port `3000`): The visual dashboard that ties it all together.
+
+### How to View Logs and Telemetry
+
+1. Open your browser and navigate to [http://localhost:3000](http://localhost:3000).
+2. Log in with the default credentials (`admin` / `admin`).
+3. Navigate to **Explore** (compass icon on the left sidebar).
+   - **For Logs:** Select `Loki` from the data source dropdown at the top left. Use the Label filters or run the query `{application="price_tracker_agent"}` to view real-time logs.
+   - **For Telemetry:** Select `Prometheus` from the data source dropdown. You can query metrics like `http_requests_total` or `http_request_duration_seconds`.
+
 ## Project Structure
 - `src/main.py`: FastAPI server and webhook entry point.
 - `src/agent.py`: NemoClaw agent initialization and behavior logic.
 - `src/database.py` & `src/models.py`: PostgreSQL connection and SQLAlchemy schema.
 - `src/scheduler.py`: Background job scheduling for periodic price tracking.
 - `src/reporting.py` & `src/templates/`: Logic for rendering and serving dynamic HTML reports.
+- `src/logger.py` & `monitoring/`: Central logging configuration and Grafana stack config files.

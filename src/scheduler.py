@@ -28,7 +28,7 @@ def check_prices():
             
         db.commit()
     except Exception as e:
-        logger.error(f"Error in scheduled task: {e}")
+        logger.exception("Error in scheduled task")
     finally:
         db.close()
 
