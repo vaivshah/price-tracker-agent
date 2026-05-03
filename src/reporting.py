@@ -6,8 +6,8 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 
-from .database import get_db
-from .models import Report
+from src.database.session import get_db
+from src.database import repository
 
 router = APIRouter()
 
@@ -18,7 +18,7 @@ async def view_report(request: Request, access_token: str, db: Session = Depends
     """
     Serves a static HTML report if the access_token is valid and not expired.
     """
-    report = db.query(Report).filter(Report.access_token == access_token).first()
+    report = repository.get_report_by_token(db, access_token)
     
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
@@ -38,17 +38,5 @@ def generate_report_link(db: Session, user_id: int, report_type: str, content_pa
     """
     Utility function to create a new report record and return the unguessable link.
     """
-    access_token = str(uuid.uuid4())
-    expires_at = datetime.utcnow() + timedelta(hours=expiry_hours)
-    
-    new_report = Report(
-        user_id=user_id,
-        report_type=report_type,
-        content_path=content_path,
-        access_token=access_token,
-        expires_at=expires_at
-    )
-    db.add(new_report)
-    db.commit()
-    
+    access_token = repository.create_report(db, user_id, report_type, content_path, expiry_hours)
     return f"/report/{access_token}"

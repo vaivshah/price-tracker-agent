@@ -2,17 +2,17 @@ from fastapi import FastAPI, Request, BackgroundTasks, Depends
 from sqlalchemy.orm import Session
 import logging
 from prometheus_fastapi_instrumentator import Instrumentator
-from .logger import setup_logging
+
+from src.core.logger import setup_logging
+from src.database.session import engine, Base, get_db
+from src.database import repository
+from src.agent import agent
+from src.reporting import router as reporting_router
+from src.scheduler import start_scheduler
 
 # Setup central logging configuration
 setup_logging()
 logger = logging.getLogger(__name__)
-
-from .database import engine, Base, get_db
-from .models import User
-from .agent import agent
-from .reporting import router as reporting_router
-from .scheduler import start_scheduler
 
 # Create all tables (for fast iteration, no alembic yet)
 Base.metadata.create_all(bind=engine)
@@ -55,13 +55,11 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks, 
     if not sender_number:
         return {"status": "error", "message": "No sender number provided"}
 
-    # Simple user lookup or creation
-    user = db.query(User).filter(User.phone_number == sender_number).first()
-    if not user:
-        user = User(phone_number=sender_number)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+    try:
+        user = repository.get_or_create_user(db, sender_number)
+    except Exception as e:
+        logger.exception("Database error while fetching user")
+        return {"status": "error", "message": "Database error"}
 
     # Offload to background task
     background_tasks.add_task(background_agent_task, user.id, incoming_msg, sender_number)

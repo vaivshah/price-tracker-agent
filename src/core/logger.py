@@ -1,6 +1,6 @@
 import logging
 import logging_loki
-from .config import config
+from src.core.config import config
 
 def setup_logging():
     """Configure global logging settings for the application."""
