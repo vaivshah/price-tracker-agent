@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+python-dotenv
+apscheduler
+jinja2
+requests
+# Assume NemoClaw/OpenClaw SDK exists or we use standard LLM libraries. We can add it here if there's a specific package.
+# nemoclaw
+# openclaw
