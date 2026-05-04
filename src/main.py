@@ -31,7 +31,9 @@ def create_app() -> FastAPI:
 
     # --- Register channel routers (Open/Closed: add new channels here) ---
     from src.channels.whatsapp import router as whatsapp_router
+    from src.channels.telegram import router as telegram_router
     app.include_router(whatsapp_router, prefix="/webhook")
+    app.include_router(telegram_router, prefix="/webhook")
 
     # --- Register report serving ---
     from src.reports.server import router as reports_router

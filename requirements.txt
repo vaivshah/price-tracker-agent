@@ -6,6 +6,7 @@ python-dotenv
 apscheduler
 jinja2
 requests
+httpx
 # Assume NemoClaw/OpenClaw SDK exists or we use standard LLM libraries. We can add it here if there's a specific package.
 # nemoclaw
 # openclaw
