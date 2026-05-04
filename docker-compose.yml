@@ -11,6 +11,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d price_tracker"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
   web:
     build: .
@@ -19,10 +24,13 @@ services:
       - .:/app
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/price_tracker
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   prometheus:
     image: prom/prometheus:latest
