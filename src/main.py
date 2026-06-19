@@ -46,8 +46,8 @@ def create_app() -> FastAPI:
 
     app = FastAPI(title="Price Tracker Agent", lifespan=lifespan)
 
-    # --- Telemetry ---
-    Instrumentator().instrument(app).expose(app)
+    # --- Initialize & Register Services ---
+    import src.services
 
     # --- Register channel routers (Open/Closed: add new channels here) ---
     from src.channels.whatsapp import router as whatsapp_router
@@ -68,6 +68,10 @@ def create_app() -> FastAPI:
             "status": "healthy" if openclaw_ok else "degraded",
             "openclaw_connected": openclaw_ok
         }
+
+    # --- Telemetry ---
+    # We instrument at the end so all routes (including routers) are registered
+    Instrumentator().instrument(app).expose(app)
 
     return app
 

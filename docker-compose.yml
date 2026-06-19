@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15
@@ -43,6 +41,8 @@ services:
       - ./openclaw/skills:/home/node/.openclaw/skills
     env_file:
       - .env
+    environment:
+      - TELEGRAM_BOT_TOKEN=
     # NOT exposed to host via ports to ensure security
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:18789/"]
@@ -64,7 +64,7 @@ services:
       - ./monitoring/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
       - grafana_data:/var/lib/grafana
     ports:
-      - "3000:3000"
+      - "3030:3000"
     depends_on:
       - prometheus
       - loki

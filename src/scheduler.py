@@ -58,9 +58,11 @@ def cleanup_expired_reports() -> None:
         db.close()
 
 
+scheduler = BackgroundScheduler()
+
+
 def start_scheduler() -> None:
     """Initialise and start the background scheduler."""
-    scheduler = BackgroundScheduler()
     scheduler.add_job(check_prices, "interval", hours=1)
     scheduler.add_job(cleanup_expired_reports, "interval", hours=6)
     scheduler.start()

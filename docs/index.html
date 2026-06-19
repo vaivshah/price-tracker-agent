@@ -306,7 +306,17 @@ docker compose exec db psql -U user -d price_tracker -c "\d product_variants"</c
 <h2>Version History &amp; Worklog</h2>
 <table>
 <tr><th>Version</th><th>Date</th><th>Changes</th></tr>
-<tr><td><span class="tag tag-green">v0.3.0</span></td><td>2026-05-04</td><td>
+<tr><td><span class="tag tag-green">v0.4.0</span></td><td>2026-06-19</td><td>
+  <strong>Unified Orchestration & Core Wiring (Phase 1)</strong><br>
+  • Refactored scheduler.py to expose scheduler globally and ensure graceful lifespan shutdown<br>
+  • Configured OpenClaw primary model to <code>google/gemini-2.5-flash</code> to resolve 404 deprecation errors<br>
+  • Enabled OpenClaw OpenAI-compatible HTTP completions `/v1/chat/completions` endpoint and refactored OpenClawClient to route messages using HTTP POST requests and <code>x-openclaw-session-key</code><br>
+  • Wiped default onboarding block <code>BOOTSTRAP.md</code> to trigger the price-check skill directly<br>
+  • Added OpenClaw variables (OPENCLAW_URL, OPENCLAW_TOKEN, GEMINI_API_KEY) to <code>config.py</code><br>
+  • Removed obsolete compose file version attribute to clear CLI startup warnings<br>
+  • Created project memory and rule customizations in <code>.agents/AGENTS.md</code>
+</td></tr>
+<tr><td><span class="tag tag-blue">v0.3.0</span></td><td>2026-05-04</td><td>
   <strong>Agent Architecture (Phase 0)</strong><br>
   • Integrated OpenClaw as containerized AI agent (Docker-only, no host ports)<br>
   • Created 4-layer data model: Product → ProductVariant (JSONB) → ProductListing → PriceSnapshot<br>
@@ -340,16 +350,13 @@ docker compose exec db psql -U user -d price_tracker -c "\d product_variants"</c
 <h2>Known Bugs &amp; Issues</h2>
 <table>
 <tr><th>Severity</th><th>Issue</th><th>Location</th><th>Notes</th></tr>
-<tr><td><span class="tag tag-amber">Medium</span></td><td>Legacy <code>orchestrator</code> import in <code>telegram.py</code> line 24</td><td><code>src/channels/telegram.py</code></td><td>Unused import left over from refactor. Remove once confirmed no side effects.</td></tr>
 <tr><td><span class="tag tag-amber">Medium</span></td><td>Scheduler still references <code>product_url</code> (legacy field)</td><td><code>src/scheduler.py:35</code></td><td>Needs to dispatch OpenClaw agent instead of direct scraping.</td></tr>
 <tr><td><span class="tag tag-amber">Medium</span></td><td>Legacy service files still present</td><td><code>src/services/</code></td><td><code>orchestrator.py</code>, <code>base.py</code>, <code>price_check.py</code>, etc. are dead code. Safe to delete after skill migration.</td></tr>
-<tr><td><span class="tag tag-blue">Low</span></td><td><code>config.py</code> missing OpenClaw env vars</td><td><code>src/core/config.py</code></td><td><code>OPENCLAW_URL</code> and <code>GEMINI_API_KEY</code> read via <code>os.getenv</code> in <code>agent.py</code> directly, not through Config class.</td></tr>
 <tr><td><span class="tag tag-blue">Low</span></td><td>No Alembic — schema changes require DB reset</td><td><code>src/main.py:45</code></td><td>Using <code>create_all</code>. Fine for dev; needs Alembic before production.</td></tr>
-<tr><td><span class="tag tag-blue">Low</span></td><td><code>docker-compose.yml</code> has obsolete <code>version</code> attribute</td><td><code>docker-compose.yml:1</code></td><td>Harmless warning on every compose command. Remove the line.</td></tr>
 </table>
 
 <p style="margin-top:48px;color:var(--text-dim);font-size:13px;border-top:1px solid var(--border);padding-top:16px">
-  Last updated: 2026-06-19 · Generated from codebase analysis at commit <code>d7b907c</code>
+  Last updated: 2026-06-19 · Updated by AI Agent during Phase 1 wiring
 </p>
 </section>
 

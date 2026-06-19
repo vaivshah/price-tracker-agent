@@ -47,15 +47,23 @@ class OpenClawClient:
         """
         Send a message to a specific agent session.
         
-        The OpenClaw gateway endpoint expects POST /api/sessions/{session_id}/messages
+        The OpenClaw gateway endpoint expects POST /v1/chat/completions
+        with the session key specified in the x-openclaw-session-key header.
         """
-        url = f"{self._base_url}/api/sessions/{session_id}/messages"
-        payload = {"message": text}
+        url = f"{self._base_url}/v1/chat/completions"
+        payload = {
+            "messages": [
+                {"role": "user", "content": text}
+            ]
+        }
+        
+        headers = self._headers.copy()
+        headers["x-openclaw-session-key"] = session_id
 
         try:
             async with httpx.AsyncClient() as client:
                 resp = await client.post(
-                    url, json=payload, headers=self._headers, timeout=60.0
+                    url, json=payload, headers=headers, timeout=60.0
                 )
                 resp.raise_for_status()
                 data = resp.json()
@@ -68,9 +76,17 @@ class OpenClawClient:
                 error=str(e),
             )
 
-        # OpenClaw typically returns the agent's text response in a specific field.
-        # This assumes a standard structure; adjust based on OpenClaw's exact schema.
-        response_text = data.get("response", data.get("text", ""))
+        try:
+            response_text = data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as e:
+            logger.error("Failed to extract content from OpenClaw response: %s", data)
+            return AgentResponse(
+                raw_text="",
+                skill="unknown",
+                summary="Sorry, I received an invalid response format from my processing core.",
+                error=str(e),
+            )
+
         return self._parse_json_response(response_text)
 
     def _parse_json_response(self, text: str) -> AgentResponse:
@@ -120,9 +136,7 @@ class OpenClawClient:
 
 
 # Singleton instance
-import os
-# Pull from environment to avoid circular dependency issues if config isn't fully loaded
 agent_client = OpenClawClient(
-    base_url=os.getenv("OPENCLAW_URL", "http://openclaw:18789"),
-    token=os.getenv("OPENCLAW_TOKEN", ""),
+    base_url=config.OPENCLAW_URL,
+    token=config.OPENCLAW_TOKEN,
 )
