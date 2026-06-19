@@ -5,6 +5,7 @@ Single Responsibility: only wires middleware, telemetry, routers, and startup ho
 Zero business logic lives here.
 """
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -18,13 +19,32 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifecycle events for the FastAPI application."""
+    
+    # 1. Start Background Scheduler
+    # We delay starting the scheduler until the DB is ready
+    start_scheduler()
+    logger.info("Application started")
+
+    yield
+
+    # Shutdown
+    from src.scheduler import scheduler
+
+    if scheduler.running:
+        scheduler.shutdown()
+        logger.info("Scheduler shutdown")
+
+
 def create_app() -> FastAPI:
     """Build and return the fully configured FastAPI application."""
 
     # Create tables (fast iteration — replace with Alembic for production)
     Base.metadata.create_all(bind=engine)
 
-    app = FastAPI(title="Price Tracker Agent")
+    app = FastAPI(title="Price Tracker Agent", lifespan=lifespan)
 
     # --- Telemetry ---
     Instrumentator().instrument(app).expose(app)
@@ -39,39 +59,17 @@ def create_app() -> FastAPI:
     from src.reports.server import router as reports_router
     app.include_router(reports_router)
 
-    # --- Register services with the orchestrator ---
-    _register_services()
-
-    # --- Startup hooks ---
-    @app.on_event("startup")
-    def on_startup():
-        start_scheduler()
-        logger.info("Application started")
-
     # --- Health check ---
     @app.get("/health")
-    def health_check():
-        return {"status": "healthy"}
+    async def health_check():
+        from src.services.agent import agent_client
+        openclaw_ok = await agent_client.health_check()
+        return {
+            "status": "healthy" if openclaw_ok else "degraded",
+            "openclaw_connected": openclaw_ok
+        }
 
     return app
-
-
-def _register_services() -> None:
-    """Wire service implementations to the orchestrator (Dependency Inversion)."""
-    from src.services.orchestrator import orchestrator
-    from src.services.price_check import PriceCheckService
-    from src.services.tracking import TrackingService
-    from src.services.research import ResearchService
-    from src.services.alternatives import AlternativesService
-    from src.services.review import ReviewService
-
-    orchestrator.register("price_check", PriceCheckService())
-    orchestrator.register("track", TrackingService())
-    orchestrator.register("research", ResearchService())
-    orchestrator.register("alternatives", AlternativesService())
-    orchestrator.register("review", ReviewService())
-
-    logger.info("All services registered with orchestrator")
 
 
 app = create_app()

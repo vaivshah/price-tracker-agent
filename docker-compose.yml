@@ -31,6 +31,24 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      openclaw:
+        condition: service_healthy
+
+  openclaw:
+    image: ghcr.io/openclaw/openclaw:latest
+    container_name: openclaw-gateway
+    restart: unless-stopped
+    volumes:
+      - openclaw_home:/home/node/.openclaw
+      - ./openclaw/skills:/home/node/.openclaw/skills
+    env_file:
+      - .env
+    # NOT exposed to host via ports to ensure security
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18789/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   prometheus:
     image: prom/prometheus:latest
@@ -65,3 +83,4 @@ volumes:
   prometheus_data:
   grafana_data:
   loki_data:
+  openclaw_home:

@@ -98,13 +98,40 @@ telegram_channel = TelegramChannel()
 # ---------------------------------------------------------------------------
 
 async def _background_handle(user_id: int, message: IncomingMessage) -> None:
-    """Run the orchestrator in the background to avoid webhook timeout."""
+    """Run the agent interaction in the background to avoid webhook timeout."""
     db = SessionLocal()
     try:
-        response = await orchestrator.handle(message, db)
-        await telegram_channel.send_response(message.user_identifier, response)
+        from src.services.agent import agent_client
+        
+        # Log inbound message
+        store.log_conversation(db, message.user_identifier, message.channel, "user", message.text)
+        
+        # Call OpenClaw API
+        agent_response = await agent_client.send_message(
+            session_id=message.user_identifier, 
+            text=message.text
+        )
+        
+        # Persist structured data if the agent found any
+        if agent_response.product_data and not agent_response.error:
+            store.persist_agent_response(
+                db=db,
+                product_data=agent_response.product_data,
+                variant_data=agent_response.variant_data,
+                listings_data=agent_response.listings_data,
+            )
+            
+        # Log outbound message
+        store.log_conversation(db, message.user_identifier, message.channel, "assistant", agent_response.summary)
+            
+        # Send reply to Telegram
+        await telegram_channel.send_response(message.user_identifier, agent_response.summary)
+        
     except Exception:
         logger.exception("Background task failed for user %s", user_id)
+        await telegram_channel.send_response(
+            message.user_identifier, "Sorry, I ran into an error processing your request."
+        )
     finally:
         db.close()
 
@@ -146,3 +173,4 @@ async def telegram_webhook(
 
     background_tasks.add_task(_background_handle, user.id, message)
     return {"status": "ok", "message": "Task queued"}
+
