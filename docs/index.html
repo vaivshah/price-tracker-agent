@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Price Tracker Agent — Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#242836;--border:#2e3348;--text:#e2e4ed;--text-dim:#8b8fa3;--accent:#6c8aff;--accent2:#a78bfa;--green:#34d399;--amber:#fbbf24;--red:#f87171;--font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.7;font-size:15px}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+
+/* Layout */
+.wrapper{display:flex;min-height:100vh}
+nav{width:260px;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;position:fixed;top:0;left:0;bottom:0;overflow-y:auto}
+nav .logo{padding:0 24px 24px;font-size:18px;font-weight:700;color:var(--accent);border-bottom:1px solid var(--border)}
+nav .logo span{color:var(--text-dim);font-weight:400;font-size:13px;display:block;margin-top:4px}
+nav ul{list-style:none;padding:16px 0}
+nav li a{display:block;padding:8px 24px;color:var(--text-dim);font-size:14px;font-weight:500;transition:all .15s}
+nav li a:hover,nav li a.active{color:var(--text);background:var(--surface2);text-decoration:none;border-left:3px solid var(--accent);padding-left:21px}
+main{margin-left:260px;padding:48px 64px;max-width:960px;flex:1}
+
+/* Typography */
+h1{font-size:32px;font-weight:700;margin-bottom:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+h2{font-size:22px;font-weight:600;margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+h3{font-size:17px;font-weight:600;margin:32px 0 12px;color:var(--accent)}
+p{margin-bottom:16px;color:var(--text-dim)}
+.subtitle{font-size:15px;color:var(--text-dim);margin-bottom:32px}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px}
+.card h4{font-size:15px;font-weight:600;margin-bottom:8px}
+.card p{margin-bottom:0;font-size:14px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+
+/* Code */
+code{font-family:var(--mono);background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:13px}
+pre{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;overflow-x:auto;margin:16px 0;font-size:13px;line-height:1.6}
+pre code{background:none;padding:0}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{text-align:left;padding:10px 14px;background:var(--surface2);color:var(--text);font-weight:600;border-bottom:2px solid var(--border)}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-dim)}
+tr:hover td{background:var(--surface)}
+
+/* Tags */
+.tag{display:inline-block;padding:2px 10px;border-radius:100px;font-size:12px;font-weight:500;margin-right:6px}
+.tag-green{background:#34d39920;color:var(--green)}
+.tag-amber{background:#fbbf2420;color:var(--amber)}
+.tag-red{background:#f8717120;color:var(--red)}
+.tag-blue{background:#6c8aff20;color:var(--accent)}
+
+/* File tree */
+.tree{font-family:var(--mono);font-size:13px;line-height:2;color:var(--text-dim)}
+.tree .dir{color:var(--accent);font-weight:500}
+.tree .file{color:var(--text-dim)}
+.tree .desc{color:var(--text-dim);opacity:.6;margin-left:8px}
+
+/* Section marker for agents */
+.agent-section{border-left:3px solid var(--accent2);padding-left:16px;margin:16px 0}
+
+/* Responsive */
+@media(max-width:900px){nav{display:none}main{margin-left:0;padding:24px}}
+</style>
+</head>
+<body>
+<div class="wrapper">
+<nav>
+  <div class="logo">Price Tracker Agent<span>v0.3.0 · Internal Docs</span></div>
+  <ul>
+    <li><a href="#vision">Product Vision</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#codebase">Codebase Map</a></li>
+    <li><a href="#running">Running & Operations</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#changelog">Changelog</a></li>
+    <li><a href="#bugs">Known Issues</a></li>
+  </ul>
+</nav>
+<main>
+
+<!-- ============================================================ -->
+<section id="vision">
+<h1>Price Tracker Agent</h1>
+<p class="subtitle">AI-powered price tracking via messaging channels — built on an autonomous agent architecture.</p>
+<div class="cards">
+  <div class="card">
+    <h4>💬 What It Does</h4>
+    <p>Users message a bot on Telegram (or WhatsApp) with a product name or URL. An autonomous AI agent looks up current prices across retailers, normalizes the data, and stores it for tracking over time.</p>
+  </div>
+  <div class="card">
+    <h4>🧠 How It Thinks</h4>
+    <p>Instead of keyword matching, an LLM-powered agent (OpenClaw) decides how to fulfill each request. Skills like <code>price-check</code> define the agent's capabilities via markdown instructions.</p>
+  </div>
+  <div class="card">
+    <h4>📊 What It Tracks</h4>
+    <p>Products are normalized into a 4-layer hierarchy: Product → Variant → Listing → PriceSnapshot. JSONB attributes handle category-specific fields (storage for phones, fabric for sofas) without schema migrations.</p>
+  </div>
+  <div class="card">
+    <h4>🔒 Security Model</h4>
+    <p>The AI agent runs <strong>exclusively inside Docker</strong> — never locally. It has no exposed ports to the host. Our web app communicates with it over the internal Docker network only.</p>
+  </div>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section id="architecture">
+<h2>Architecture &amp; Design Decisions</h2>
+<h3>High-Level Flow</h3>
+<pre><code>User (Telegram) → FastAPI webhook → OpenClaw Agent (Docker) → Structured JSON
+                                                                    ↓
+                                    Telegram reply ← agent.py ← store.persist_agent_response()
+                                                                    ↓
+                                                    Product → Variant → Listing → PriceSnapshot (Postgres)</code></pre>
+
+<h3>Key Design Decisions</h3>
+<table>
+<tr><th>Decision</th><th>Choice</th><th>Why</th></tr>
+<tr><td>Channel layer</td><td>Strategy Pattern (<code>Channel</code> ABC)</td><td>Add Telegram/WhatsApp/Email without modifying existing code</td></tr>
+<tr><td>Agent framework</td><td>OpenClaw (containerized)</td><td>LLM-powered skill routing replaces brittle keyword matching</td></tr>
+<tr><td>Agent isolation</td><td>Docker-only, no host ports</td><td>Security — agent cannot escape container; app talks via internal network</td></tr>
+<tr><td>LLM provider</td><td>Gemini (swappable via env)</td><td>Factory pattern through <code>OPENCLAW_MODEL_PROVIDER</code> env var</td></tr>
+<tr><td>Variant attributes</td><td>PostgreSQL JSONB</td><td>Category-specific fields without schema migrations (vs EAV or separate tables)</td></tr>
+<tr><td>Session strategy</td><td>Per-user (<code>chat_id</code>)</td><td>Multi-turn conversations — "track it" refers to the last product discussed</td></tr>
+<tr><td>Store pattern</td><td><code>store/</code> package (not raw queries)</td><td>ACID-compliant, race-condition safe with IntegrityError fallback</td></tr>
+<tr><td>ORM</td><td>SQLAlchemy + <code>create_all</code></td><td>Fast iteration; Alembic planned for production migrations</td></tr>
+<tr><td>Telemetry</td><td>Prometheus + Grafana + Loki</td><td>Full-stack observability: metrics, dashboards, and centralized logs</td></tr>
+</table>
+
+<h3>Data Model (4-Layer Hierarchy)</h3>
+<pre><code>Product: "iPhone 16 Pro" (brand=Apple, category=smartphones)
+├── Variant: "128GB, Space Black" (attributes={storage:128GB, color:Space Black})
+│   ├── Listing: Amazon  → $999  ⭐4.7 (2,341 reviews)
+│   ├── Listing: BestBuy → $979  ⭐4.6 (891 reviews)
+│   └── Listing: Apple   → $999  ⭐4.8 (5,612 reviews)
+│       └── PriceSnapshot: $999 @ May 3, $1029 @ Apr 28, ...
+│
+└── Variant: "256GB, White Titanium" (attributes={storage:256GB, color:White Titanium})
+    └── Listing: Apple   → $1,099 ...</code></pre>
+
+<h3>JSONB Attributes Examples</h3>
+<div class="cards">
+  <div class="card"><h4>📱 Phone</h4><p><code>{"storage":"256GB","color":"Space Black","carrier":"Unlocked"}</code></p></div>
+  <div class="card"><h4>💻 Laptop</h4><p><code>{"ram":"36GB","storage":"1TB SSD","cpu":"M4 Max"}</code></p></div>
+  <div class="card"><h4>🛋️ Sofa</h4><p><code>{"seats":"3","fabric":"Tibbleby beige"}</code></p></div>
+  <div class="card"><h4>📺 TV</h4><p><code>{"screen_size":"65\"","resolution":"4K","panel_type":"OLED"}</code></p></div>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section id="codebase">
+<h2>Codebase Map</h2>
+<div class="agent-section">
+<p><strong>🤖 Mandatory Developer & Agent Workflow:</strong></p>
+<ol style="margin-left: 20px; color: var(--text-dim); font-size: 14px;">
+  <li><strong>Look at this page</strong> (<code>docs/index.html</code>) first for reference.</li>
+  <li><strong>Get more, precise context</strong> by inspecting the actual implementation files.</li>
+  <li><strong>Implement the changes</strong> required following the standards outlined.</li>
+  <li><strong>Update this page</strong> to keep the documentation fully synchronized with your changes.</li>
+</ol>
+</div>
+
+<h3>Project Root</h3>
+<pre><code>price_tracker_agent/
+├── docker-compose.yml      # All 6 services: db, web, openclaw, prometheus, grafana, loki
+├── Dockerfile              # Python 3.11-slim image for the web service
+├── requirements.txt        # Python dependencies (FastAPI, SQLAlchemy, httpx, etc.)
+├── .env / .env.example     # Environment variables (DB, tokens, API keys)
+├── docs/                   # This documentation
+├── monitoring/             # Observability config (prometheus.yml, grafana-datasources, loki-config)
+├── openclaw/               # OpenClaw agent configuration
+│   └── skills/
+│       └── price-check/
+│           └── SKILL.md    # LLM instructions for the price-check skill
+└── src/                    # Application source code
+    ├── main.py             # FastAPI app factory — wires routers, telemetry, lifespan
+    ├── scheduler.py        # APScheduler background jobs (price checks, report cleanup)
+    ├── core/               # Cross-cutting concerns
+    ├── channels/           # Input channel adapters (Strategy Pattern)
+    ├── database/           # ORM models and data access layer
+    ├── services/           # Business logic and agent client
+    └── reports/            # HTML report generation and serving</code></pre>
+
+<h3>src/core/ — Cross-Cutting Concerns</h3>
+<table>
+<tr><th>File</th><th>Purpose</th></tr>
+<tr><td><code>config.py</code></td><td>Central <code>Config</code> class — reads all env vars. Single source of truth for DATABASE_URL, tokens, LOKI_URL.</td></tr>
+<tr><td><code>logger.py</code></td><td><code>setup_logging()</code> — configures console + Loki dual handlers. Called once at app boot.</td></tr>
+<tr><td><code>telemetry.py</code></td><td>Custom Prometheus counters/histograms: <code>messages_received_total</code>, <code>service_executions_total</code>, <code>active_tracking_jobs</code>, etc.</td></tr>
+</table>
+
+<h3>src/channels/ — Input Adapters</h3>
+<table>
+<tr><th>File</th><th>Purpose</th></tr>
+<tr><td><code>base.py</code></td><td><code>Channel</code> ABC + <code>IncomingMessage</code> dataclass. All channels implement <code>parse_request()</code> and <code>send_response()</code>.</td></tr>
+<tr><td><code>telegram.py</code></td><td><strong>Primary active channel.</strong> Webhook at <code>/webhook/telegram</code>. Background task calls OpenClaw via <code>agent_client</code>, persists response, sends reply.</td></tr>
+<tr><td><code>telegram_poller.py</code></td><td>Long-polling alternative for local dev (no ngrok needed).</td></tr>
+<tr><td><code>whatsapp.py</code></td><td>WhatsApp/Twilio channel. Functional but secondary.</td></tr>
+</table>
+
+<h3>src/database/models/ — ORM Models</h3>
+<table>
+<tr><th>File</th><th>Models</th><th>Key Fields</th></tr>
+<tr><td><code>user.py</code></td><td><code>User</code></td><td>phone_number, registration_status, relationships to jobs/reports/conversations</td></tr>
+<tr><td><code>product.py</code></td><td><code>Product</code>, <code>ProductVariant</code>, <code>ProductListing</code>, <code>PriceSnapshot</code></td><td>4-layer hierarchy. Variant has JSONB <code>attributes</code>. Listing has <code>source_url</code> (unique). Snapshot is immutable.</td></tr>
+<tr><td><code>tracking.py</code></td><td><code>TrackingJob</code></td><td>Links user → variant, optional listing_id for retailer lock, target_price, notify_on</td></tr>
+<tr><td><code>report.py</code></td><td><code>Report</code></td><td>access_token (UUID), content_path, expires_at</td></tr>
+<tr><td><code>conversation.py</code></td><td><code>ConversationLog</code></td><td>Multi-turn context: identifier, channel, role (user/assistant), content</td></tr>
+</table>
+
+<h3>src/database/store/ — Data Access Layer</h3>
+<table>
+<tr><th>File</th><th>Key Functions</th></tr>
+<tr><td><code>users.py</code></td><td><code>get_or_create_user()</code>, <code>get_user_by_identifier()</code>, <code>get_user_by_id()</code></td></tr>
+<tr><td><code>products.py</code></td><td><code>find_or_create_product()</code>, <code>find_or_create_variant()</code>, <code>find_or_create_listing()</code>, <code>create_price_snapshot()</code>, <strong><code>persist_agent_response()</code></strong> — atomically ingests full agent JSON into the 4-layer hierarchy</td></tr>
+<tr><td><code>tracking.py</code></td><td><code>create_tracking_job()</code>, <code>get_active_tracking_jobs()</code>, <code>mark_job_completed()</code>, <code>cancel_tracking_job()</code></td></tr>
+<tr><td><code>reports.py</code></td><td><code>create_report()</code>, <code>get_report_by_token()</code>, <code>get_expired_reports()</code></td></tr>
+<tr><td><code>conversations.py</code></td><td><code>log_conversation()</code>, <code>get_recent_conversation()</code></td></tr>
+</table>
+
+<h3>src/services/ — Business Logic</h3>
+<table>
+<tr><th>File</th><th>Status</th><th>Purpose</th></tr>
+<tr><td><code>agent.py</code></td><td><span class="tag tag-green">Active</span></td><td><code>OpenClawClient</code> — async HTTP client to OpenClaw gateway. Sends messages, parses JSON responses. Singleton <code>agent_client</code>.</td></tr>
+<tr><td><code>orchestrator.py</code></td><td><span class="tag tag-amber">Legacy</span></td><td>Old keyword-based intent router. No longer wired in <code>main.py</code>. Kept for reference during migration.</td></tr>
+<tr><td><code>base.py</code></td><td><span class="tag tag-amber">Legacy</span></td><td><code>BaseService</code> ABC for old orchestrator pattern.</td></tr>
+<tr><td><code>price_check.py</code>, <code>tracking.py</code>, <code>research.py</code>, <code>alternatives.py</code>, <code>review.py</code></td><td><span class="tag tag-amber">Legacy</span></td><td>Old service implementations. To be migrated to OpenClaw skills.</td></tr>
+</table>
+
+<h3>openclaw/ — Agent Skills</h3>
+<table>
+<tr><th>Skill</th><th>File</th><th>What It Does</th></tr>
+<tr><td>price-check</td><td><code>openclaw/skills/price-check/SKILL.md</code></td><td>Instructs the LLM to look up a product price and return structured JSON matching the Product→Variant→Listing schema.</td></tr>
+</table>
+</section>
+
+<!-- ============================================================ -->
+<section id="running">
+<h2>Running &amp; Operations</h2>
+<h3>Prerequisites</h3>
+<p>Docker, Docker Compose, and a <code>.env</code> file (copy from <code>.env.example</code>). You need a <code>TELEGRAM_BOT_TOKEN</code> from @BotFather and a <code>GEMINI_API_KEY</code>.</p>
+
+<h3>Start Everything</h3>
+<pre><code># First time (pulls OpenClaw image ~700MB)
+docker compose up -d
+
+# Rebuild after code changes
+docker compose up -d --build web
+
+# View logs
+docker compose logs web --tail 50 -f
+docker compose logs openclaw --tail 50 -f</code></pre>
+
+<h3>Services &amp; Ports</h3>
+<table>
+<tr><th>Service</th><th>Port</th><th>URL</th></tr>
+<tr><td>web (FastAPI)</td><td>8000</td><td><a href="http://localhost:8000/health">http://localhost:8000/health</a></td></tr>
+<tr><td>db (Postgres)</td><td>5432</td><td><code>psql -U user -d price_tracker</code></td></tr>
+<tr><td>openclaw</td><td>18789 (internal only)</td><td>No host access — by design</td></tr>
+<tr><td>Prometheus</td><td>9090</td><td><a href="http://localhost:9090">http://localhost:9090</a></td></tr>
+<tr><td>Grafana</td><td>3000</td><td><a href="http://localhost:3000">http://localhost:3000</a> (admin/admin)</td></tr>
+<tr><td>Loki</td><td>3100</td><td>Log aggregation backend (query via Grafana)</td></tr>
+</table>
+
+<h3>Telegram Webhook Setup</h3>
+<pre><code># Expose local port via ngrok
+ngrok http 8000
+
+# Register webhook with Telegram
+curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://YOUR_NGROK.ngrok.io/webhook/telegram"</code></pre>
+
+<h3>Health Check</h3>
+<pre><code>curl http://localhost:8000/health
+# Returns: {"status":"healthy","openclaw_connected":true}</code></pre>
+
+<h3>Database Inspection</h3>
+<pre><code>docker compose exec db psql -U user -d price_tracker -c "\dt"
+docker compose exec db psql -U user -d price_tracker -c "\d product_variants"</code></pre>
+</section>
+
+<!-- ============================================================ -->
+<section id="roadmap">
+<h2>Roadmap &amp; Future Features</h2>
+<table>
+<tr><th>Phase</th><th>Feature</th><th>Status</th></tr>
+<tr><td>0</td><td>OpenClaw agent integration, 4-layer data model, agent.py client</td><td><span class="tag tag-green">Done</span></td></tr>
+<tr><td>0</td><td>Remove legacy orchestrator + old services from main.py</td><td><span class="tag tag-green">Done</span></td></tr>
+<tr><td>0</td><td>Telegram ↔ OpenClaw end-to-end flow</td><td><span class="tag tag-green">Done</span></td></tr>
+<tr><td>1</td><td>End-to-end testing with real Telegram messages</td><td><span class="tag tag-amber">Next</span></td></tr>
+<tr><td>1</td><td>Scheduler dispatches OpenClaw for periodic price checks</td><td><span class="tag tag-amber">Next</span></td></tr>
+<tr><td>1</td><td>Price drop notifications via Telegram</td><td><span class="tag tag-blue">Planned</span></td></tr>
+<tr><td>2</td><td>Additional skills: tracking, research, alternatives, review</td><td><span class="tag tag-blue">Planned</span></td></tr>
+<tr><td>2</td><td>Delete legacy service files once all skills migrated</td><td><span class="tag tag-blue">Planned</span></td></tr>
+<tr><td>3</td><td>Alembic migrations (replace create_all)</td><td><span class="tag tag-blue">Planned</span></td></tr>
+<tr><td>3</td><td>WhatsApp channel activation</td><td><span class="tag tag-blue">Planned</span></td></tr>
+<tr><td>3</td><td>Web dashboard for price history visualization</td><td><span class="tag tag-blue">Planned</span></td></tr>
+<tr><td>4</td><td>Multi-provider LLM support (OpenAI, Anthropic)</td><td><span class="tag tag-blue">Planned</span></td></tr>
+</table>
+</section>
+
+<!-- ============================================================ -->
+<section id="changelog">
+<h2>Version History &amp; Worklog</h2>
+<table>
+<tr><th>Version</th><th>Date</th><th>Changes</th></tr>
+<tr><td><span class="tag tag-green">v0.4.0</span></td><td>2026-06-19</td><td>
+  <strong>Unified Orchestration & Core Wiring (Phase 1)</strong><br>
+  • Refactored scheduler.py to expose scheduler globally and ensure graceful lifespan shutdown<br>
+  • Configured OpenClaw primary model to <code>google/gemini-2.5-flash</code> to resolve 404 deprecation errors<br>
+  • Enabled OpenClaw OpenAI-compatible HTTP completions `/v1/chat/completions` endpoint and refactored OpenClawClient to route messages using HTTP POST requests and <code>x-openclaw-session-key</code><br>
+  • Wiped default onboarding block <code>BOOTSTRAP.md</code> to trigger the price-check skill directly<br>
+  • Added OpenClaw variables (OPENCLAW_URL, OPENCLAW_TOKEN, GEMINI_API_KEY) to <code>config.py</code><br>
+  • Removed obsolete compose file version attribute to clear CLI startup warnings<br>
+  • Created project memory and rule customizations in <code>.agents/AGENTS.md</code>
+</td></tr>
+<tr><td><span class="tag tag-blue">v0.3.0</span></td><td>2026-05-04</td><td>
+  <strong>Agent Architecture (Phase 0)</strong><br>
+  • Integrated OpenClaw as containerized AI agent (Docker-only, no host ports)<br>
+  • Created 4-layer data model: Product → ProductVariant (JSONB) → ProductListing → PriceSnapshot<br>
+  • Split monolithic <code>models.py</code> and <code>store.py</code> into domain packages<br>
+  • Built <code>agent.py</code> (OpenClawClient) — async HTTP client with JSON response parsing<br>
+  • Rewired <code>telegram.py</code> to route through OpenClaw instead of legacy orchestrator<br>
+  • Removed orchestrator service registration from <code>main.py</code><br>
+  • Added OpenClaw health check to <code>/health</code> endpoint<br>
+  • Created first skill: <code>openclaw/skills/price-check/SKILL.md</code><br>
+  • Updated <code>.env</code> with OPENCLAW_URL, OPENCLAW_TOKEN, GEMINI_API_KEY
+</td></tr>
+<tr><td><span class="tag tag-blue">v0.2.0</span></td><td>2026-05-03</td><td>
+  <strong>Modular Architecture</strong><br>
+  • Refactored into service-based orchestrator with intent routing<br>
+  • Added Telegram channel integration (webhook + polling modes)<br>
+  • Database repository layer (<code>store.py</code>) with ACID compliance<br>
+  • Observability stack: Prometheus, Grafana, Loki
+</td></tr>
+<tr><td><span class="tag tag-blue">v0.1.0</span></td><td>2026-05-02</td><td>
+  <strong>Foundation</strong><br>
+  • Initial project setup with FastAPI + SQLAlchemy + Postgres<br>
+  • WhatsApp channel via Twilio<br>
+  • Basic price check and tracking services<br>
+  • Docker Compose for local development
+</td></tr>
+</table>
+</section>
+
+<!-- ============================================================ -->
+<section id="bugs">
+<h2>Known Bugs &amp; Issues</h2>
+<table>
+<tr><th>Severity</th><th>Issue</th><th>Location</th><th>Notes</th></tr>
+<tr><td><span class="tag tag-amber">Medium</span></td><td>Scheduler still references <code>product_url</code> (legacy field)</td><td><code>src/scheduler.py:35</code></td><td>Needs to dispatch OpenClaw agent instead of direct scraping.</td></tr>
+<tr><td><span class="tag tag-amber">Medium</span></td><td>Legacy service files still present</td><td><code>src/services/</code></td><td><code>orchestrator.py</code>, <code>base.py</code>, <code>price_check.py</code>, etc. are dead code. Safe to delete after skill migration.</td></tr>
+<tr><td><span class="tag tag-blue">Low</span></td><td>No Alembic — schema changes require DB reset</td><td><code>src/main.py:45</code></td><td>Using <code>create_all</code>. Fine for dev; needs Alembic before production.</td></tr>
+</table>
+
+<p style="margin-top:48px;color:var(--text-dim);font-size:13px;border-top:1px solid var(--border);padding-top:16px">
+  Last updated: 2026-06-19 · Updated by AI Agent during Phase 1 wiring
+</p>
+</section>
+
+</main>
+</div>
+</body>
+</html>
